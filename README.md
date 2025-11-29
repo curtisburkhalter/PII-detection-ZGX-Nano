@@ -1,4 +1,5 @@
 # PII Masking Demo - Fine-tuning Comparison
+### This demo was created during my time as an AI Product Manager at HP
 
 ## Overview
 This demonstration showcases the effectiveness of fine-tuning large language models for PII (Personally Identifiable Information) detection and masking. The demo compares a base TinyLlama model against a fine-tuned Qwen2.5-32B model, highlighting the dramatic improvement in accuracy and consistency achieved through fine-tuning.

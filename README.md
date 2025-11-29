@@ -178,3 +178,7 @@ The demo includes an offline test endpoint that uses regex-based masking if mode
 - Test the demo before customer presentations
 - Have sample PII text ready (the interface includes examples)
 - The fine-tuned model will consistently outperform the base model
+
+## Support
+
+If you have questions about this demo contact Curtis Burkhalter at curtisburkhalter@gmail.com

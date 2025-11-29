@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PII Masking Demo - Model Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #024AD8 0%, #0356E8 40%, #4A90E2 70%, #87CEEB 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+        
+        .status-dot.connected {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.loading {
+            background: #FFC107;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-dot.error {
+            background: #f44336;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .load-models-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .load-models-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .load-models-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .input-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .input-section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        
+        .sample-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .sample-btn {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .sample-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            min-height: 150px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+        }
+        
+        .process-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .process-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .settings {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .setting-group label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .setting-group input {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 80px;
+        }
+        
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .model-output {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            min-height: 300px;
+        }
+        
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .model-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .base-model .model-title {
+            color: #FF6B00;
+        }
+        
+        .finetuned-model .model-title {
+            color: #4CAF50;
+        }
+        
+        .model-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        .base-model .model-badge {
+            background: #FFF3E0;
+            color: #FF6B00;
+        }
+        
+        .finetuned-model .model-badge {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+        
+        .output-text {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .output-placeholder {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .performance-metrics {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        
+        .metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .metric-label {
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .highlight {
+            background: yellow;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        
+        .pii-tag {
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 0 2px;
+        }
+        
+        .pii-tag.name { background: #2196F3; }
+        .pii-tag.phone { background: #FF9800; }
+        .pii-tag.email { background: #9C27B0; }
+        .pii-tag.ssn { background: #f44336; }
+        .pii-tag.address { background: #4CAF50; }
+        .pii-tag.date { background: #795548; }
+        .pii-tag.credit_card { background: #E91E63; }
+        .pii-tag.id { background: #00BCD4; }
+        
+        @media (max-width: 768px) {
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><img src="hp_logo.png" alt="HP Logo" class="logo">PII Masking Model Comparison<img src="hp_logo.png" alt="HP Logo" class="logo"></h1>
+            <h2> Powered by HP ZGX Nano</h2>
+            
+            
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Checking connection...</span>
+            </div>
+            <div style="color: #666; font-size: 0.9rem;">
+                Models load on-demand
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <h2>Input Text with PII</h2>
+            <div class="sample-buttons">
+                <button class="sample-btn" onclick="loadSample('healthcare')">Healthcare</button>
+                <button class="sample-btn" onclick="loadSample('finance')">Finance</button>
+                <button class="sample-btn" onclick="loadSample('manufacturing')">Manufacturing</button>
+            </div>
+            <textarea 
+                class="text-input" 
+                id="inputText" 
+                placeholder="Enter text containing PII (names, phone numbers, SSN, addresses, etc.)..."
+            ></textarea>
+            <div class="controls">
+                <button class="process-btn" id="processBtn" onclick="processPII()">
+                    🔍 Process & Compare
+                </button>
+                <div class="settings">
+                    <div class="setting-group">
+                        <label>Max Length:</label>
+                        <input type="number" id="maxLength" value="512" min="128" max="2048">
+                    </div>
+                    <div class="setting-group">
+                        <label>Temperature:</label>
+                        <input type="number" id="temperature" value="0.1" min="0" max="1" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison-section">
+            <div class="model-output base-model">
+                <div class="model-header">
+                    <span class="model-title">Base Model</span>
+                    <span class="model-badge">TinyLlama</span>
+                </div>
+                <div class="output-text" id="baseOutput">
+                    <span class="output-placeholder">Waiting for input...</span>
+                </div>
+                <div class="performance-metrics">
+                    <div class="metric">
+                        <span class="metric-label">Processing Time</span>
+                        <span class="metric-value" id="baseTime">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">PII Found</span>
+                        <span class="metric-value" id="basePIICount">--</span>
+                    </div>
+                </div>
+                <div class="loading-overlay" id="baseLoading">
+                    <div class="spinner"></div>
+                    <p>Processing with base model...</p>
+                </div>
+            </div>
+            
+            <div class="model-output finetuned-model">
+                <div class="model-header">
+                    <span class="model-title">Finetuned Model</span>
+                    <span class="model-badge">Qwen2.5-32B Finetuned</span>
+                </div>
+                <div class="output-text" id="finetunedOutput">
+                    <span class="output-placeholder">Waiting for input...</span>
+                </div>
+                <div class="performance-metrics">
+                    <div class="metric">
+                        <span class="metric-label">Processing Time</span>
+                        <span class="metric-value" id="finetunedTime">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">PII Found</span>
+                        <span class="metric-value" id="finetunedPIICount">--</span>
+                    </div>
+                </div>
+                <div class="loading-overlay" id="finetunedLoading">
+                    <div class="spinner"></div>
+                    <p>Processing with finetuned model...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://192.168.10.123:8000';
+        let modelsLoaded = false;
+        
+        // Sample texts
+        const samples = {
+            healthcare: "Clinical consultation from March 8, 2024:\nProvider: Dr. Amanda Rodriguez (NPI: 1234567890), Nurse: Kevin Park (Employee ID: RN-45678)\nPatient: Marcus Thompson (DOB: 07/14/1978, SSN: 456-78-9012, MRN: HC-2024-77889)\nInsurance: Aetna Policy #AET-9876543210\nDiagnosis discussed at 15800 Medical Center Drive, Suite 200, Houston, TX 77024\nPrescription sent to patient's email: m.thompson@personalmail.com\nFollow-up: Contact office at 713-555-2847 or billing dept at marcus.t.billing@healthsystem.org",
+            
+            finance: "Loan application review from Feb 22, 2024:\nApplicant: Diana Chen, SSN: 789-12-3456, DOB: 11/03/1982\nCo-applicant: James Morrison (Driver's License: DL-TX-8765432)\nProperty Address: 2847 Riverside Parkway, Unit 12C, Austin, TX 78701\nLoan Amount: $425,000, Account Reference: LA-2024-98234\nContact: diana.chen@techcorp.com or 512-555-9103\nCredit card for application fee: 5412-7834-2901-6655, Exp: 08/26\nProcessor ID: FP-45231, reviewed by Sarah.Williams@mortgagebank.com",
+            
+            manufacturing: "Production facility audit - April 5, 2024:\nSite Manager: Robert Chang (Badge ID: MC-87654, SSN: 234-56-7890)\nSafety Officer: Patricia Gonzalez (Phone: 602-555-4176, Employee #EMP-2024-5643)\nLocation: 8900 Industrial Boulevard, Building 3, Phoenix, AZ 85043\nIncident report for operator James Mitchell (DOB: 05/19/1985, ID: OP-12389)\nInsurance Claim: WC-2024-445566 filed with carrier policy #IC-7823456\nPayment processed: $8,750 via company card ending in 3421\nContact: facility.safety@manufacturing-corp.com or reach Patricia at p.gonzalez@manufacturing-corp.com"
+        };
+        
+        // Check connection status
+        async function checkConnection() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            try {
+                const response = await fetch(`${API_URL}/`);
+                const data = await response.json();
+                
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'Connected - Ready';
+                
+            } catch (error) {
+                statusDot.className = 'status-dot error';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+        
+        // Load models
+        async function loadModels() {
+            const btn = document.getElementById('loadModelsBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            statusDot.className = 'status-dot loading';
+            statusText.textContent = 'Loading models (this may take a few minutes)...';
+            
+            try {
+                const response = await fetch(`${API_URL}/load_models`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDot.className = 'status-dot connected';
+                    statusText.textContent = 'Models Loaded Successfully';
+                    btn.textContent = 'Models Ready';
+                    modelsLoaded = true;
+                } else {
+                    throw new Error(data.detail || 'Failed to load models');
+                }
+                
+            } catch (error) {
+                alert('Failed to load models: ' + error.message);
+                statusDot.className = 'status-dot error';
+                statusText.textContent = 'Model Loading Failed';
+                btn.disabled = false;
+                btn.textContent = 'Retry Loading';
+            }
+        }
+        
+        // Load sample text
+        function loadSample(type) {
+            document.getElementById('inputText').value = samples[type];
+        }
+        
+        // Count PII tags in output
+        function countPIITags(text) {
+            // Match any text in square brackets that looks like a PII tag
+            const piiPattern = /\[[A-Z][A-Z_]*\]/g;
+            const matches = text.match(piiPattern);
+            return matches ? matches.length : 0;
+        }
+        
+        // Format output with colored tags
+function formatOutput(text) {
+    return text
+        // Generic MASKED tag (used by base model)
+        .replace(/\[MASKED\]/g, '<span class="pii-tag id">[MASKED]</span>')
+        
+        // Standard tags
+        .replace(/\[NAME\]/g, '<span class="pii-tag name">[NAME]</span>')
+        .replace(/\[PHONE\]/g, '<span class="pii-tag phone">[PHONE]</span>')
+        .replace(/\[EMAIL\]/g, '<span class="pii-tag email">[EMAIL]</span>')
+        .replace(/\[SSN\]/g, '<span class="pii-tag ssn">[SSN]</span>')
+        .replace(/\[ADDRESS\]/g, '<span class="pii-tag address">[ADDRESS]</span>')
+        .replace(/\[DATE\]/g, '<span class="pii-tag date">[DATE]</span>')
+        .replace(/\[CREDIT_CARD\]/g, '<span class="pii-tag credit_card">[CREDIT_CARD]</span>')
+        .replace(/\[ID\]/g, '<span class="pii-tag id">[ID]</span>')
+        
+        // Variations from finetuned model
+        .replace(/\[PHONE_NUMBER\]/g, '<span class="pii-tag phone">[PHONE_NUMBER]</span>')
+        .replace(/\[EMAIL_ADDRESS\]/g, '<span class="pii-tag email">[EMAIL_ADDRESS]</span>')
+        .replace(/\[STREET_ADDRESS\]/g, '<span class="pii-tag address">[STREET_ADDRESS]</span>')
+        .replace(/\[CITY\]/g, '<span class="pii-tag address">[CITY]</span>')
+        .replace(/\[STATE\]/g, '<span class="pii-tag address">[STATE]</span>')
+        .replace(/\[ZIP_CODE\]/g, '<span class="pii-tag address">[ZIP_CODE]</span>')
+        .replace(/\[ZIP\]/g, '<span class="pii-tag address">[ZIP]</span>')
+        
+        // Additional common variations
+        .replace(/\[PERSON\]/g, '<span class="pii-tag name">[PERSON]</span>')
+        .replace(/\[LOCATION\]/g, '<span class="pii-tag address">[LOCATION]</span>')
+        .replace(/\[DOB\]/g, '<span class="pii-tag date">[DOB]</span>')
+        .replace(/\[BIRTH_DATE\]/g, '<span class="pii-tag date">[BIRTH_DATE]</span>')
+        .replace(/\[DATE_OF_BIRTH\]/g, '<span class="pii-tag date">[DATE_OF_BIRTH]</span>')
+        .replace(/\[SOCIAL_SECURITY\]/g, '<span class="pii-tag ssn">[SOCIAL_SECURITY]</span>')
+        .replace(/\[CREDIT\]/g, '<span class="pii-tag credit_card">[CREDIT]</span>')
+        .replace(/\[CC\]/g, '<span class="pii-tag credit_card">[CC]</span>')
+        .replace(/\[ID_NUMBER\]/g, '<span class="pii-tag id">[ID_NUMBER]</span>')
+        .replace(/\[MEDICAL_RECORD\]/g, '<span class="pii-tag id">[MEDICAL_RECORD]</span>')
+        .replace(/\[MRN\]/g, '<span class="pii-tag id">[MRN]</span>')
+        .replace(/\[ACCOUNT\]/g, '<span class="pii-tag id">[ACCOUNT]</span>')
+        .replace(/\[LICENSE\]/g, '<span class="pii-tag id">[LICENSE]</span>')
+        .replace(/\[ALPHANUMERIC_ID\]/g, '<span class="pii-tag id">[ALPHANUMERIC_ID]</span>')
+        .replace(/\[FIRST_NAME\]/g, '<span class="pii-tag name">[FIRST_NAME]</span>')
+        .replace(/\[LAST_NAME\]/g, '<span class="pii-tag name">[LAST_NAME]</span>')
+        .replace(/\[CURRENCY_AMOUNT\]/g, '<span class="pii-tag credit_card">[CURRENCY_AMOUNT]</span>')
+        .replace(/\[CREDIT_CARD_NUMBER\]/g, '<span class="pii-tag credit_card">[CREDIT_CARD_NUMBER]</span>')
+        .replace(/\[INSURANCE_ID\]/g, '<span class="pii-tag id">[INSURANCE_ID]</span>')
+        
+        // Healthcare/PHI specific tags (from finetuned model)
+        .replace(/\[PATIENT_NAME\]/g, '<span class="pii-tag name">[PATIENT_NAME]</span>')
+        .replace(/\[MEDICAL_LICENSE_NUMBER\]/g, '<span class="pii-tag id">[MEDICAL_LICENSE_NUMBER]</span>')
+        .replace(/\[EMPLOYEE_ID\]/g, '<span class="pii-tag id">[EMPLOYEE_ID]</span>')
+        .replace(/\[SOCIAL_SECURITY_NUMBER\]/g, '<span class="pii-tag ssn">[SOCIAL_SECURITY_NUMBER]</span>')
+        .replace(/\[MEDICAL_RECORD_NUMBER\]/g, '<span class="pii-tag id">[MEDICAL_RECORD_NUMBER]</span>')
+        .replace(/\[INSURANCE_POLICY\]/g, '<span class="pii-tag id">[INSURANCE_POLICY]</span>')
+        .replace(/\[NPI\]/g, '<span class="pii-tag id">[NPI]</span>')
+        .replace(/\[PROVIDER_NAME\]/g, '<span class="pii-tag name">[PROVIDER_NAME]</span>')
+        .replace(/\[DIAGNOSIS\]/g, '<span class="pii-tag id">[DIAGNOSIS]</span>')
+        .replace(/\[MEDICATION\]/g, '<span class="pii-tag id">[MEDICATION]</span>')
+        .replace(/\[HEALTH_PLAN\]/g, '<span class="pii-tag id">[HEALTH_PLAN]</span>')
+        .replace(/\[PATIENT_IDENTIFIER\]/g, '<span class="pii-tag id">[PATIENT_IDENTIFIER]</span>')
+        .replace(/\[INSURANCE_POLICY_NUMBER\]/g, '<span class="pii-tag id">[INSURANCE_POLICY_NUMBER]</span>')
+        .replace(/\[POLICY_NUMBER\]/g, '<span class="pii-tag id">[POLICY_NUMBER]</span>');
+}
+        // Process PII
+        async function processPII() {
+            const inputText = document.getElementById('inputText').value.trim();
+            
+            if (!inputText) {
+                alert('Please enter some text to process');
+                // return;
+            }
+            
+            // Check if we should use test endpoint or real endpoint
+            const endpoint = '/mask_pii';
+            
+            if (false) { // Always use mask_pii
+                // Removed alert - models load on startup
+                // return;
+            }
+            
+            // Show loading
+            document.getElementById('baseLoading').classList.add('active');
+            document.getElementById('finetunedLoading').classList.add('active');
+            
+            // Clear previous results
+            document.getElementById('baseOutput').innerHTML = '<span class="output-placeholder">Processing...</span>';
+            document.getElementById('finetunedOutput').innerHTML = '<span class="output-placeholder">Processing...</span>';
+            document.getElementById('baseTime').textContent = '--';
+            document.getElementById('finetunedTime').textContent = '--';
+            document.getElementById('basePIICount').textContent = '--';
+            document.getElementById('finetunedPIICount').textContent = '--';
+            
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: inputText,
+                        max_tokens: parseInt(document.getElementById('maxLength').value),
+                        temperature: parseFloat(document.getElementById('temperature').value)
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to process text');
+                }
+                
+                const data = await response.json();
+                
+                // Update base model output
+                document.getElementById('baseOutput').innerHTML = formatOutput(data.base_model_output);
+                document.getElementById('baseTime').textContent = `${data.base_model_time}s`;
+                document.getElementById('basePIICount').textContent = countPIITags(data.base_model_output);
+                
+                // Update finetuned model output
+                document.getElementById('finetunedOutput').innerHTML = formatOutput(data.finetuned_model_output);
+                document.getElementById('finetunedTime').textContent = `${data.finetuned_model_time}s`;
+                document.getElementById('finetunedPIICount').textContent = countPIITags(data.finetuned_model_output);
+                
+            } catch (error) {
+                alert('Error processing text: ' + error.message);
+                document.getElementById('baseOutput').innerHTML = '<span class="output-placeholder">Error occurred</span>';
+                document.getElementById('finetunedOutput').innerHTML = '<span class="output-placeholder">Error occurred</span>';
+            } finally {
+                // Hide loading
+                document.getElementById('baseLoading').classList.remove('active');
+                document.getElementById('finetunedLoading').classList.remove('active');
+            }
+        }
+        
+        // Initialize
+        window.onload = function() {
+            checkConnection();
+            // Check connection every 5 seconds
+            setInterval(checkConnection, 5000);
+            
+            // Load a sample by default
+            loadSample('healthcare');
+        };
+    </script>
+</body>
+</html>

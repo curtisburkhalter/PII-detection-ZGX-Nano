@@ -406,9 +406,9 @@
         <div class="input-section">
             <h2>Input Text with PII</h2>
             <div class="sample-buttons">
+                <button class="sample-btn" onclick="loadSample('federal')">Federal Government</button>
+                <button class="sample-btn" onclick="loadSample('sled')">SLED</button>
                 <button class="sample-btn" onclick="loadSample('healthcare')">Healthcare</button>
-                <button class="sample-btn" onclick="loadSample('finance')">Finance</button>
-                <button class="sample-btn" onclick="loadSample('manufacturing')">Manufacturing</button>
             </div>
             <textarea 
                 class="text-input" 
@@ -484,16 +484,16 @@
     </div>
     
     <script>
-        const API_URL = 'http://192.168.10.123:8000';
+        const API_URL = 'http://192.168.10.117:8000';
         let modelsLoaded = false;
         
         // Sample texts
         const samples = {
-            healthcare: "Clinical consultation from March 8, 2024:\nProvider: Dr. Amanda Rodriguez (NPI: 1234567890), Nurse: Kevin Park (Employee ID: RN-45678)\nPatient: Marcus Thompson (DOB: 07/14/1978, SSN: 456-78-9012, MRN: HC-2024-77889)\nInsurance: Aetna Policy #AET-9876543210\nDiagnosis discussed at 15800 Medical Center Drive, Suite 200, Houston, TX 77024\nPrescription sent to patient's email: m.thompson@personalmail.com\nFollow-up: Contact office at 713-555-2847 or billing dept at marcus.t.billing@healthsystem.org",
-            
-            finance: "Loan application review from Feb 22, 2024:\nApplicant: Diana Chen, SSN: 789-12-3456, DOB: 11/03/1982\nCo-applicant: James Morrison (Driver's License: DL-TX-8765432)\nProperty Address: 2847 Riverside Parkway, Unit 12C, Austin, TX 78701\nLoan Amount: $425,000, Account Reference: LA-2024-98234\nContact: diana.chen@techcorp.com or 512-555-9103\nCredit card for application fee: 5412-7834-2901-6655, Exp: 08/26\nProcessor ID: FP-45231, reviewed by Sarah.Williams@mortgagebank.com",
-            
-            manufacturing: "Production facility audit - April 5, 2024:\nSite Manager: Robert Chang (Badge ID: MC-87654, SSN: 234-56-7890)\nSafety Officer: Patricia Gonzalez (Phone: 602-555-4176, Employee #EMP-2024-5643)\nLocation: 8900 Industrial Boulevard, Building 3, Phoenix, AZ 85043\nIncident report for operator James Mitchell (DOB: 05/19/1985, ID: OP-12389)\nInsurance Claim: WC-2024-445566 filed with carrier policy #IC-7823456\nPayment processed: $8,750 via company card ending in 3421\nContact: facility.safety@manufacturing-corp.com or reach Patricia at p.gonzalez@manufacturing-corp.com"
+            federal: `Security Clearance Investigation - Case File FC-2024-08817. Subject: Robert James Whitfield, DOB: 03/15/1982, SSN: 298-44-6173. Current residence: 1847 Sycamore Terrace, Apt 12B, Springfield, VA 22153. Subject holds a GS-13 position at the Department of Energy, Employee ID: DOE-2019-44281. Phone: (202) 586-4307. Email: robert.whitfield@energy.gov. Financial review flagged a $47,250 outstanding balance on credit card Account #4716-XXXX-XXXX-8834. Subject's spouse: Catherine Marie Whitfield, SSN: 412-67-5598, DOB: 07/29/1984.`,
+
+            sled: `Incident Report #CDE-IR-2024-03392. Filed by: Principal Donna Vasquez, Employee ID: CDE-T-88214, Lakewood Heights Elementary, 4520 West Colfax Avenue, Lakewood, CO 80215. Phone: (303) 982-4471. Email: donna.vasquez@jeffco.k12.co.us. Parent Kevin Darryl Bressler (DOB: 11/03/1979, Driver License: CO-2018-445672, phone: (720) 331-5587) arrived demanding release of his son Tyler Bressler (Student ID: JC-2022-55918, DOB: 06/22/2016). Ex-wife Angela Marie Thornton (phone: (303) 445-2098, email: angela.thornton@gmail.com, address: 892 Wadsworth Blvd, Apt 4, Lakewood, CO 80214) has sole custody per Court Order #2023-DR-04417.`,
+
+            healthcare: `Discharge Summary - Mercy General Hospital, MRN: MRN-2024-882714. Patient: Josephine Adele Marchetti, DOB: 05/18/1957, SSN: 551-32-8847. Address: 7742 Fair Oaks Boulevard, Carmichael, CA 95608. Phone: (916) 482-3391. Email: josie.marchetti@yahoo.com. Insurance: Blue Shield of California, Policy #BSC-4471882-A. Attending: Dr. Rajesh Krishnamurthy, MD (NPI: 1467552381, License #A-108834). Phone: (916) 733-4500. Diagnosis: Acute myocardial infarction. Emergency Contact: Anthony Richard Marchetti (spouse), cell: (916) 705-1128. Total charges: $187,442.16.`
         };
         
         // Check connection status
@@ -555,7 +555,8 @@
         // Count PII tags in output
         function countPIITags(text) {
             // Match any text in square brackets that looks like a PII tag
-            const piiPattern = /\[[A-Z][A-Z_]*\]/g;
+            // Covers both ALL_CAPS tags like [NAME] and mixed case like [First Name] or [Phone Number Redacted]
+            const piiPattern = /\[[A-Za-z][A-Za-z_ ]*(?:Redacted)?\]/g;
             const matches = text.match(piiPattern);
             return matches ? matches.length : 0;
         }
@@ -620,7 +621,49 @@ function formatOutput(text) {
         .replace(/\[HEALTH_PLAN\]/g, '<span class="pii-tag id">[HEALTH_PLAN]</span>')
         .replace(/\[PATIENT_IDENTIFIER\]/g, '<span class="pii-tag id">[PATIENT_IDENTIFIER]</span>')
         .replace(/\[INSURANCE_POLICY_NUMBER\]/g, '<span class="pii-tag id">[INSURANCE_POLICY_NUMBER]</span>')
-        .replace(/\[POLICY_NUMBER\]/g, '<span class="pii-tag id">[POLICY_NUMBER]</span>');
+        .replace(/\[POLICY_NUMBER\]/g, '<span class="pii-tag id">[POLICY_NUMBER]</span>')
+        
+        // Mixed-case tags from finetuned model (e.g. [First Name], [Phone Number Redacted])
+        .replace(/\[First Name\]/g, '<span class="pii-tag name">[First Name]</span>')
+        .replace(/\[Last Name\]/g, '<span class="pii-tag name">[Last Name]</span>')
+        .replace(/\[Full Name\]/g, '<span class="pii-tag name">[Full Name]</span>')
+        .replace(/\[Phone Number Redacted\]/g, '<span class="pii-tag phone">[Phone Number Redacted]</span>')
+        .replace(/\[Phone Number\]/g, '<span class="pii-tag phone">[Phone Number]</span>')
+        .replace(/\[Email Address Redacted\]/g, '<span class="pii-tag email">[Email Address Redacted]</span>')
+        .replace(/\[Email Address\]/g, '<span class="pii-tag email">[Email Address]</span>')
+        .replace(/\[Email Redacted\]/g, '<span class="pii-tag email">[Email Redacted]</span>')
+        .replace(/\[Address Redacted\]/g, '<span class="pii-tag address">[Address Redacted]</span>')
+        .replace(/\[Street Address Redacted\]/g, '<span class="pii-tag address">[Street Address Redacted]</span>')
+        .replace(/\[Date of Birth Redacted\]/g, '<span class="pii-tag date">[Date of Birth Redacted]</span>')
+        .replace(/\[Date of Birth\]/g, '<span class="pii-tag date">[Date of Birth]</span>')
+        .replace(/\[SSN Redacted\]/g, '<span class="pii-tag ssn">[SSN Redacted]</span>')
+        .replace(/\[Social Security Number Redacted\]/g, '<span class="pii-tag ssn">[Social Security Number Redacted]</span>')
+        .replace(/\[Social Security Number\]/g, '<span class="pii-tag ssn">[Social Security Number]</span>')
+        .replace(/\[License Number Redacted\]/g, '<span class="pii-tag id">[License Number Redacted]</span>')
+        .replace(/\[License Number\]/g, '<span class="pii-tag id">[License Number]</span>')
+        .replace(/\[Credit Card Redacted\]/g, '<span class="pii-tag credit_card">[Credit Card Redacted]</span>')
+        .replace(/\[Credit Card Number Redacted\]/g, '<span class="pii-tag credit_card">[Credit Card Number Redacted]</span>')
+        .replace(/\[Account Number Redacted\]/g, '<span class="pii-tag id">[Account Number Redacted]</span>')
+        .replace(/\[Insurance Policy Redacted\]/g, '<span class="pii-tag id">[Insurance Policy Redacted]</span>')
+        .replace(/\[Medical Record Number Redacted\]/g, '<span class="pii-tag id">[Medical Record Number Redacted]</span>')
+        .replace(/\[NPI Redacted\]/g, '<span class="pii-tag id">[NPI Redacted]</span>')
+        .replace(/\[Employee ID Redacted\]/g, '<span class="pii-tag id">[Employee ID Redacted]</span>')
+        .replace(/\[Student ID Redacted\]/g, '<span class="pii-tag id">[Student ID Redacted]</span>')
+        
+        // Catch-all: any remaining [Something Redacted] or [Something Something] tags not yet matched
+        .replace(/\[([A-Z][a-z]+(?:\s[A-Z][a-z]+)*(?:\sRedacted)?)\]/g, function(match, inner) {
+            // Determine color based on keywords in the tag
+            let cls = 'id';  // default
+            const lower = inner.toLowerCase();
+            if (lower.includes('name')) cls = 'name';
+            else if (lower.includes('phone')) cls = 'phone';
+            else if (lower.includes('email')) cls = 'email';
+            else if (lower.includes('ssn') || lower.includes('social security')) cls = 'ssn';
+            else if (lower.includes('address') || lower.includes('city') || lower.includes('state') || lower.includes('zip')) cls = 'address';
+            else if (lower.includes('date') || lower.includes('birth') || lower.includes('dob')) cls = 'date';
+            else if (lower.includes('credit') || lower.includes('card')) cls = 'credit_card';
+            return '<span class="pii-tag ' + cls + '">[' + inner + ']</span>';
+        });
 }
         // Process PII
         async function processPII() {
@@ -698,7 +741,7 @@ function formatOutput(text) {
             setInterval(checkConnection, 5000);
             
             // Load a sample by default
-            loadSample('healthcare');
+            loadSample('federal');
         };
     </script>
 </body>

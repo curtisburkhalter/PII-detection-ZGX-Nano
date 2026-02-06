@@ -100,7 +100,7 @@ def create_pii_prompt(text: str, is_finetuned: bool = False) -> str:
     
     return prompt
     
-def generate_with_gguf(model, prompt: str, max_tokens: int = 256, temperature: float = 0.1, model_type: str = "tinyllama", input_text: str = "") -> tuple:
+def generate_with_gguf(model, prompt: str, max_tokens: int = 1024, temperature: float = 0.1, model_type: str = "tinyllama", input_text: str = "") -> tuple:
     """Generate masked text using GGUF model"""
     start_time = time.time()
     
@@ -185,26 +185,26 @@ async def mask_pii(request: PIIRequest):
     try:
         # Generate with TinyLlama base model
         base_prompt = create_pii_prompt(request.text, is_finetuned=False)
-        print(f"DEBUG: Base prompt: {base_prompt[:100]}")
-        print(f"DEBUG: Using base_model: {type(base_model)}")
+        print(f"DEBUG: Base prompt length: {len(base_prompt)} chars")
         base_output, base_time = generate_with_gguf(
             base_model, 
             base_prompt,
             request.max_tokens,
             request.temperature,
-            model_type="tinyllama"
+            model_type="tinyllama",
+            input_text=request.text
         )
         
         # Generate with finetuned Qwen model
         finetuned_prompt = create_pii_prompt(request.text, is_finetuned=True)
-        print(f"DEBUG: FT prompt: {finetuned_prompt[:100]}")
-        print(f"DEBUG: Using finetuned_model: {type(finetuned_model)}")
+        print(f"DEBUG: FT prompt length: {len(finetuned_prompt)} chars")
         finetuned_output, finetuned_time = generate_with_gguf(
             finetuned_model,
             finetuned_prompt,
             request.max_tokens,
             request.temperature,
-            model_type="qwen"
+            model_type="qwen",
+            input_text=request.text
         )
         
         return PIIResponse(
